@@ -1,6 +1,8 @@
 -- CSci 119, Lab 3
 
 -- See https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-List.html
+{-# OPTIONS_GHC -Wno-overlapping-patterns #-}
+{-# OPTIONS_GHC -Wno-deferred-type-errors #-}
 import Data.List (sort, stripPrefix)
 
 
@@ -25,12 +27,14 @@ cart a b= [(x,y) | x <-a, y <-b]
 -- power [1,2] = [[],[1],[1,2],[2]]
 -- power [2,3]= [[],[2],[2,3],[3]]
 -- power [1,2,3] = [[],[1],[1,2],[1,2,3],[1,3],[2],[2,3],[3]]
-power :: Ord a => [a] -> [[a]]
+
+power :: [a] -> [[a]]
 power []=[[]]
-power (x:xs)= sort(power xs++[x:ys | ys <- power xs])
-
-
-
+power (x:xs)=
+  let phead= [[]]
+      pbody= map([x]++) $ power xs
+      ptail=tail$ power xs
+  in  phead++pbody++ptail
 ---------------- Length-ordered lists
 
 -- Length-Ordered Lists over "character type" a (aka "strings over a")
@@ -72,21 +76,28 @@ lang xs = norm $ map lol xs
 
 -- Membership for languages (infinite lists satisfying invariant included)
 memb :: Ord a => LOL a -> Lang a -> Bool
-memb (LOL len l) b = not (or [len < len_a | (LOL len_a l_a) <- sort b])
-                    && or [l == l_a | (LOL len_a l_a) <- sort b]
-                   
+memb a b = memHelper a $ sort b where 
+  memHelper:: Ord a => LOL a -> Lang a -> Bool
+  memHelper (LOL len l) ((LOL len_x l_x) : xs)
+    | len < len_x = False
+    | len == len_x && l == l_x = True
+    | otherwise = memHelper (LOL len l) xs
 
 -- Merge of langages (aka "union")
-rmdups ::  Eq a =>  [a] -> [a]
+rmdups ::  Ord a => [a] -> [a]
 rmdups [] = []
-rmdups (x:xs)=x : filter(/=x) (rmdups xs)
+rmdups (x:xs) = x : filter (/= x) (rmdups xs)
 
 merge :: Ord a => Lang a -> Lang a -> Lang a
-merge x y = sort $ rmdups (x++y)
+merge x []=x
+merge [] y=y
+merge (x:xs) (y:ys)=rmdups(x:y :merge xs ys)
 
 -- Concatenation of languages
 cat :: Ord a => Lang a -> Lang a -> Lang a
-cat x y = sort $ rmdups [lol (lx++ly)| (LOL _ lx) <- x,(LOL _ ly)<-y]
+cat [] y=[]
+cat y []=[]
+cat x y = merge [dot (head x) b| b<- y] (cat (tail x) y)
 
 -- Kleene star of languages
 kstar :: Ord a => Lang a -> Lang a
@@ -143,15 +154,26 @@ toRE w = go w [] where
 -- that, for any string w, lang_of (onestr w) == [w], and for any (finite) list
 -- of (distinct, sorted) strings l, lang_of (finite l) == l.
 onestr :: String -> RegExp
-onestr xs = 
-
+onestr []= Empty
+onestr [x]= Let x
+onestr xs =  Cat (Let $ head xs) (onestr $ tail xs) 
+--finite ["aba", "c"]
+--Union (Cat (Let 'a') (Cat (Let 'b') (Let 'a'))) (Let 'c')
 finite :: [String] -> RegExp
-finite xs = undefined
+finite []= Empty
+finite [x]= onestr x
+finite xs =  Union (onestr $ head xs) (finite $ tail xs)
 
 
 -- The language associated to a regular expression, i.e., [[r]]
 lang_of :: RegExp -> Lang Char
-lang_of rs = lang [show rs]
-
+lang_of w = lHelper w  where
+  lHelper :: RegExp -> Lang Char
+  lHelper Empty=[]
+  lHelper (Let x)=lang[[x]]
+  lhelper (Cat x y)=lang_of x++lang_of y
+  lhelper (Union x y)=[a | a <- lang_of x++lang_of y]
+  lhelper (Star x)=kstar$lang_of x
 
 -- Test all of the above operations extensively!            
+
