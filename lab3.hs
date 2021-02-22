@@ -91,14 +91,14 @@ rmdups (x:xs) = x : filter (/= x) (rmdups xs)
 merge :: Ord a => Lang a -> Lang a -> Lang a
 merge x []=x
 merge [] y=y
-merge (x:xs) (y:ys)=rmdups(x:y :merge xs ys)
+merge (x:xs) (y:ys)=norm(x:y :merge xs ys)
 
 -- Concatenation of languages
 cat :: Ord a => Lang a -> Lang a -> Lang a
 cat [] y=[]
 cat y []=[]
-cat x y = merge [dot (head x) b| b<- y] (cat (tail x) y)
-
+--cat x y =  merge [dot b (head y)| b<-x] (cat x (tail y))
+cat xs ys = [dot (LOL a b) (LOL c d)|(LOL c d)<-ys,(LOL a b)<-xs]
 -- Kleene star of languages
 kstar :: Ord a => Lang a -> Lang a
 kstar [] = [eps]
