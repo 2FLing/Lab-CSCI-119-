@@ -217,20 +217,15 @@ match1 r w = m1 r w where
 
 match2 :: RegExp -> String -> Bool
 
-match2 r w = m [r] False w where
+match2 r w = m [r] True w where
   m :: [RegExp] ->Bool->String->Bool
+  m [] c w=not c && null w
   m [Empty] c w= not c && null w 
   m (Let x:rs) c w= x==head w && m rs (not c) (tail w)
   m ((Union r1 r2):rs) c w= m (r1:rs) c w || m (r2:rs) c w
   m ((Cat r1 r2):rs) c w= m (r1:r2:rs) c w || c && byp r1 && m (r2:rs) c w
   m (Star r1:rs) c w= (not c && m rs c w) || m (r1:Star r1:rs) c w
 
-test :: [RegExp] ->Bool->String->Bool
-test [Empty] c w= not c && null w 
-test  (Let x:rs) c w= x==head w && test  rs (not c) (tail w)
-test  ((Union r1 r2):rs) c w= test  (r1:rs) c w || test  (r2:rs) c w
-test  ((Cat r1 r2):rs) c w= test  (r1:r2:rs) c w || c && byp r1 && test  (r2:rs) c w
-test  (Star r1:rs) c w= (not c && test  rs c w) || test  (r1:Star r1:rs) c w
 -- Some regular expressions for testing. Also, test them on other solutions
 -- to the exercises of Section 3.2 (as many as you can get). 
 
