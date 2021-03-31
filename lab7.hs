@@ -122,23 +122,21 @@ solve ((l11:l1J) : rows) (l1':lI') = simp x1 : xI where
 
   -- sub-matrix [[l22,...,l2n], ..., [ln2,...,lnn]]
   lIJ = [tail x | x <- rows]
-
-  -- [[l22_bar,...,l2n_bar], ..., [ln2_bar,...,lnn_bar]] computed via (6)
-  lIJ_bar = zipWith sixes lI1 lIJ            -- loops for i = 2 .. n
-  sixes li1 liJ = zipWith (six li1) l1J liJ  -- loops for j = 2 .. n
-  six li1 l1j lij = Union'[Cat'[li1,Star' l11, l1j],lij]
-
+  --LIJ=li1xl11*xl1jUlij
+  -- [[l22_bar,...,l2n_bar], ..., [ln2_bar,...,lnn_bar]] computed via (6)          
+  lIJ_bar = zipWith sixes lI1 lIJ            -- loops for i = 2 .. n                                           
+  sixes li1 liJ = zipWith (six li1) l1J liJ  -- loops for j = 2 .. n                                           
+  six li1 l1j lij = Union'[Cat'[li1,Star' l11, l1j],lij]                                                        
+                                                                            
   -- [l2'_bar,..., ln'_bar] computed via (7)
-  lI'_bar = zipWith seven lI1 lI'
-  seven li1 li' = Union'[Cat'[li1, Star' l11,l1'],li']
+  lI'_bar = zipWith seven lI1 lI'                                                
+  seven li1 li' = Union'[Cat'[li1, Star' l11,l1'],li']                             
     
   -- recursively solve the system of size n-1
   xI = solve lIJ_bar lI'_bar
 
   -- compute x1 from xI via (5)
-  x1 = Cat'[Star' l11,Union'[Union'[Cat'[a,b] |a <- l1J, b <- xI],l1']]
-
-
+  x1 = Cat'[Star' l11,Union'[Union'[Cat'[fst a, snd a]| a<- zip l1J xI],l1']]    
 -- Generate a regular SPLE from an FSM via formulas in Theorem 6.5
 toSPLE :: FSM Int -> ([[RegExp']], [RegExp'])
 toSPLE (qs,s,fs,d) = (lIJ, lI') where
