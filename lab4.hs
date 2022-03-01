@@ -86,9 +86,9 @@ dot  (LOL _ l1) (LOL _ l2)=lol (l1++l2)
 
 -- Concatenation of languages
 cat :: Ord a => Lang a -> Lang a -> Lang a
-cat [] y=[]
-cat y []=[] 
-cat xs ys = [dot a b|b<-ys,a<-xs]
+cat [] y = []
+cat y [] = []
+cat (x:xs) (y:ys) = dot x y : merge (map (dot x) ys) (cat xs (y:ys))
 
 -- Kleene star of languages
 kstar :: Ord a => Lang a -> Lang a
@@ -112,7 +112,7 @@ merge xs@(x:xr) ys@(y:yr) =
 onestr :: String -> RegExp
 onestr []= Empty
 onestr [x]= Let x
-onestr xs =  Cat (Let $ head xs) (onestr $ tail xs)
+onestr (x:xs) =  Cat (Let x) (onestr xs)
 
 --finite ["aba", "c"]
 --Union (Cat (Let 'a') (Cat (Let 'b') (Let 'a'))) (Let 'c')
@@ -205,13 +205,12 @@ else
 
 match1 :: RegExp -> String -> Bool
 match1 r w = m1 r w where
-  m1 :: RegExp -> String -> Bool
-  m1 Empty w=False
+  m1 Empty w= False
   m1 (Let x) w= [x]==w
   m1 (Union x y) w= match1 x w || match1 y w
+  m1 (Cat x y) ""=match1 x "" && match1 y ""
   m1 (Cat x y) w=or[match1 x (fst a) && match1 y (snd a)| a<-splits w]
-  m1 (Star x) w= null w || or[match1 x (fst a) && match1 (Star x) (snd a) | a <- splits w, not (null $ fst a)]
-
+  m1 (Star x) w= null w || or[not (null $ fst a)&&match1 x (fst a) && match1 (Star x) (snd a) | a <- splits w]
              
 
 
@@ -235,15 +234,46 @@ sigma = ['a', 'b']                -- Alphabet used in all examples below
 ab   = toRE "aa.bb.+*"            -- every letter is duplicated
 ttla = toRE "ab+*a.ab+.ab+."      -- third to last letter is a
 ena  = toRE "b*a.b*.a.*b*."       -- even number of a's
-bb1  = toRE "aba.+*b.b.aab.+*."   -- contains bb exactly once
 
+bb1  = toRE "aba.+*b.b.aab.+*."   -- contains bb exactly once
 
 -- For your tests, you may also find the following helpful. For example,
 -- you can generate all strings of length 10 (or 20) or less and then test
 -- to see whether match1 r w == memb (lol w) (lang_of r) for each such w.
+
+-- Membership for languages (infinite lists satisfying invariant included)
+memb :: Ord a => LOL a -> Lang a -> Bool
+memb _ [] = False
+memb x (y:ys) = case compare x y of LT -> False
+                                    EQ -> True
+                                    GT -> memb x ys
 
 -- All strings on sigma of length <= n (useful for testing)
 strings :: Int -> [String]
 strings n = concatMap str [0..n] where
   str 0 = [""]
   str n = [a:w | a <- sigma, w <- str (n-1)]
+
+test1 :: Bool
+test1= and [match1 ena s == memb (lol s) (lang_of ena) | s <- strings 5] -- test match1 with ena, result: True
+
+test1_2 :: Bool
+test1_2= and [match1 ab s == memb (lol s) (lang_of ab) | s <- strings 5] -- test match1 with ab, result: True
+
+test1_3 :: Bool
+test1_3= and [match1 ttla s == memb (lol s) (lang_of ttla) | s <- strings 5] -- test match1 with ttla, result: True
+
+test1_4 :: Bool
+test1_4= and [match1 bb1 s == memb (lol s) (lang_of bb1) | s <- strings 5] -- test match1 with ttla, result: True
+
+test2 :: Bool
+test2= and [match2 ena s == memb (lol s) (lang_of ena) | s <- strings 5] -- test match2 with ena, result: True
+
+test2_2 :: Bool
+test2_2= and [match2 ab s == memb (lol s) (lang_of ab) | s <- strings 5] -- test match2 with ab, result: True
+
+test2_3 :: Bool
+test2_3= and [match2 ttla s == memb (lol s) (lang_of ttla) | s <- strings 5] -- test match2 with ttla, result: True
+
+test2_4 :: Bool
+test2_4= and [match2 bb1 s == memb (lol s) (lang_of bb1) | s <- strings 5] -- test match2 with ttla, result: True

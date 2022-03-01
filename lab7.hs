@@ -161,9 +161,40 @@ conv m@(_,s,_,_) = simp $ solution !! s where
 
 
 -- Test! Test! Test! (and show your tests here)
+{----------------------------------------------------------------------------
+test 1 :
+   input: 
+   soln = let a = Let' 'a' ; b= Let' 'b' in solve [[ b, Zero, a], [a,b,Zero] ,[Zero, a, b]] [Zero, One, Zero]
+   map (Compact . fromRE') soln
 
+  output:
+  [b*a(b+ab*ab*a)*ab*,b*ab*a(b+ab*ab*a)*ab*+b*,(b+ab*ab*a)*ab*]
 
+test 2:
+  input: 
+  soln = let a = Let' 'a' ; b= Let' 'b' in solve [[ b, a, Zero], [Zero,b,a] ,[a,Zero,b]] [Zero, One, Zero]  
+  map (Compact . fromRE') soln
 
+  output:
+  [b*ab*+b*ab*a(b+ab*ab*a)*ab*ab*,b*a(b+ab*ab*a)*ab*ab*+b*,(b+ab*ab*a)*ab*ab*]
+
+test 3:
+  input: 
+  soln = soln = let a = Let' 'a' ; b= Let' 'b' in solve [[ b, a, Zero], [Zero,b,a] ,[a,Zero,b]] [One, Zero , Zero] 
+  map (Compact . fromRE') soln
+
+  output:
+  [b*ab*a(b+ab*ab*a)*ab*+b*,b*a(b+ab*ab*a)*ab*,(b+ab*ab*a)*ab*]
+
+test 4:
+  input: 
+  soln = let a = Let' 'a' ; b= Let' 'b' in solve [[ b, a, Zero], [Zero,b,a] ,[a,Zero,b]] [Zero, Zero , One]
+  map (Compact . fromRE') soln
+
+  output:
+  [b*ab*a(b+ab*ab*a)*,b*a(b+ab*ab*a)*,(b+ab*ab*a)*]
+
+----------------------------------------------------------------------------}
 ---------------- Lab 7 ends here ----------------------------------
 
 
@@ -202,6 +233,7 @@ of a RegExp' until it no longer changes, result in a simplified RegExp':
 (*) Note: this rule should only be applied if rs is not already normalized;
     normalization is used to realize the commutativity and idempotency of union
     (i.e., that  L1 u L2 = L2 u L1  and  L u L = L ).
+
 
 However, it would be very inefficient to attempt to apply these rules in the
 manner indicated. Instead, our approach is to stage the application of these
